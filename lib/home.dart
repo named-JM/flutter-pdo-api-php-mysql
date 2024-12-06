@@ -1,8 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_auth/main.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_auth/add_business.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -10,33 +8,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String? userId;
+  String username = '';
+  String userId = '';
 
   @override
   void initState() {
     super.initState();
-    checkSession();
+    _loadUserDetails();
   }
 
-  Future<void> checkSession() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2/flutter_auth/check_session.php'),
-    );
+  Future<void> _loadUserDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ?? 'User';
+      userId = prefs.getString('id') ?? 'Unknown';
+    });
 
-    print('Server response: ${response.body}'); // Debugging
-
-    final data = json.decode(response.body);
-    if (data['status'] == 'success') {
-      setState(() {
-        userId = data['id'];
-      });
-    } else {
-      // Session is invalid, navigate back to login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
-      );
-    }
+    // Log the user details to the console
+    print('Logged-in User:');
+    print('Username: $username');
+    print('User ID: $userId');
   }
 
   @override
@@ -44,9 +35,23 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(title: Text('Home')),
       body: Center(
-        child: userId == null
-            ? CircularProgressIndicator()
-            : Text('Welcome! Your user ID is $userId'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Welcome, $username!'),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to the BusinessFormPage
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => BusinessFormPage()),
+                );
+              },
+              child: Text('Add Business'),
+            ),
+          ],
+        ),
       ),
     );
   }
